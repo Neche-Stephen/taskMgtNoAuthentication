@@ -13,7 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -105,4 +107,74 @@ public class TaskServiceImpl implements TaskService {
                         .build())
                 .build();
     }
+
+    @Override
+    public TaskResponseDto getTask(String email, Long taskId) {
+        Optional<Task> optionalTask = taskRepository.findById(taskId);
+        if(optionalTask.isEmpty()) {
+            throw  new RuntimeException();
+        }
+        Task task = optionalTask.get();
+
+        if (!task.getUserModel().getEmail().equals(email)) {
+            throw new RuntimeException("You do not have permission to edit this task");
+        }
+
+
+        return TaskResponseDto.builder()
+                .responseCode("004")
+                .responseMessage("Get Task was a Success")
+                .taskResponseInfo(TaskResponseInfo.builder()
+                        .title(task.getTitle())
+                        .description(task.getDescription())
+                        .deadline(task.getDeadline())
+                        .priorityLevel(task.getPriorityLevel())
+                        .status(task.getStatus())
+                        .build())
+                .build();
+    }
+
+    @Override
+    public List<TaskResponseDto> getTaskByStatus(String email, Status status) {
+        List<Task> tasks = taskRepository.findAllByStatus(status);
+
+        // Filter tasks by email and map to TaskResponseDto
+
+        return tasks.stream()
+                .filter(task -> task.getUserModel().getEmail().equals(email))
+                .map(task -> TaskResponseDto.builder()
+                        .responseCode("005")
+                        .responseMessage("Get Task by Status was a Success")
+                        .taskResponseInfo(TaskResponseInfo.builder()
+                                .title(task.getTitle())
+                                .description(task.getDescription())
+                                .deadline(task.getDeadline())
+                                .priorityLevel(task.getPriorityLevel())
+                                .status(task.getStatus())
+                                .build())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TaskResponseDto> getAllTask(String email) {
+        List<Task> tasks = taskRepository.findAll();
+
+        // Get all task
+        return tasks.stream()
+                .filter(task -> task.getUserModel().getEmail().equals(email))
+                .map(task -> TaskResponseDto.builder()
+                        .responseCode("006")
+                        .responseMessage("Get all Task was a Success")
+                        .taskResponseInfo(TaskResponseInfo.builder()
+                                .title(task.getTitle())
+                                .description(task.getDescription())
+                                .deadline(task.getDeadline())
+                                .priorityLevel(task.getPriorityLevel())
+                                .status(task.getStatus())
+                                .build())
+                        .build())
+                .collect(Collectors.toList());
+    }
 }
+
